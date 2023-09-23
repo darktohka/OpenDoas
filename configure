@@ -65,7 +65,7 @@ for x; do
 	--uid-max) UID_MAX=$var ;;
 	--gid-max) UID_MAX=$var ;;
 	--help|-h) usage ;;
-	*) die "Error: unknown option $opt" ;;
+	*) echo "Warning: unknown option $opt" ;;
 	esac
 done
 
