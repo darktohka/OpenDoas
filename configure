@@ -544,9 +544,6 @@ check_func "__attribute__" "$src" || {
 auth=$(authmethod)
 if [ $? -eq 0 ]; then
 	printf 'Using auth method\t\t\t%s.\n' "$auth" >&2
-else
-	printf 'Error auth method\t\t\n' >&2
-	exit 1
 fi
 
 persist=$(persistmethod)
