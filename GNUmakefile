@@ -20,8 +20,6 @@ install: ${PROG} ${MAN}
 	mkdir -p -m 0755 ${DESTDIR}${MANDIR}/man1
 	mkdir -p -m 0755 ${DESTDIR}${MANDIR}/man5
 	cp -f ${PROG} ${DESTDIR}${BINDIR}
-	chown ${BINOWN}:${BINGRP} ${DESTDIR}${BINDIR}/${PROG}
-	chmod ${BINMODE} ${DESTDIR}${BINDIR}/${PROG}
 	cp -f doas.1 ${DESTDIR}${MANDIR}/man1
 	cp -f doas.conf.5 ${DESTDIR}${MANDIR}/man5
 
