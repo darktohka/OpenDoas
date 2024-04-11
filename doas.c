@@ -272,11 +272,7 @@ main(int argc, char **argv)
 			confpath = optarg;
 			break;
 		case 'L':
-#if defined(USE_TIMESTAMP)
-			exit(timestamp_clear() == -1);
-#else
 			exit(0);
-#endif
 		case 'u':
 			if (parseuid(optarg, &target) != 0)
 				errx(1, "unknown user");
@@ -349,19 +345,10 @@ main(int argc, char **argv)
 		errc(1, EPERM, NULL);
 	}
 
-#if defined(USE_SHADOW)
-	if (!(rule->options & NOPASS)) {
-		if (nflag)
-			errx(1, "Authentication required");
-
-		shadowauth(mypw->pw_name, rule->options & PERSIST);
-	}
-#elif !defined(USE_PAM)
 	/* no authentication provider, only allow NOPASS rules */
 	(void) nflag;
 	if (!(rule->options & NOPASS))
 		errx(1, "Authentication required");
-#endif
 
 	if ((p = getenv("PATH")) != NULL)
 		formerpath = strdup(p);
@@ -378,11 +365,6 @@ main(int argc, char **argv)
 		err(1, "getpwuid_r failed");
 	if (targpw == NULL)
 		errx(1, "no passwd entry for target");
-
-#if defined(USE_PAM)
-	pamauth(targpw->pw_name, mypw->pw_name, !nflag, rule->options & NOPASS,
-	    rule->options & PERSIST);
-#endif
 
 #ifdef HAVE_LOGIN_CAP_H
 	if (setusercontext(NULL, targpw, target, LOGIN_SETGROUP |

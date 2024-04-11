@@ -23,11 +23,6 @@ usage: configure [options]
   --enable-debug         enable debugging
   --enable-static        prepare for static build
 
-  --without-pam          disable pam support
-  --without-shadow       disable shadow support
-
-  --with-timestamp       enable timestamp support
-
   --uid-max=NUM          set UID_MAX (default 65535)
   --gid-max=NUM          set GID_MAX (default 65535)
 
@@ -37,7 +32,6 @@ EOF
 }
 
 # defaults
-WITHOUT_TIMESTAMP=yes
 UID_MAX=65535
 GID_MAX=65535
 
@@ -56,12 +50,6 @@ for x; do
 	--target) TARGET=$var ;;
 	--enable-debug) DEBUG=yes ;;
 	--enable-static) BUILD_STATIC=yes ;;
-	--with-pam) WITHOUT_PAM=; WITHOUT_SHADOW=yes ;;
-	--with-shadow) WITHOUT_SHADOW=; WITHOUT_PAM=yes ;;
-	--without-pam) WITHOUT_PAM=yes ;;
-	--without-shadow) WITHOUT_SHADOW=yes ;;
-	--with-timestamp) WITHOUT_TIMESTAMP= ;;
-	--without-timestamp) WITHOUT_TIMESTAMP=yes ;;
 	--uid-max) UID_MAX=$var ;;
 	--gid-max) UID_MAX=$var ;;
 	--help|-h) usage ;;
@@ -176,52 +164,6 @@ check_func() {
 	fi
 }
 
-authmethod() {
-	#
-	# Check for pam_appl.h.
-	#
-	src='
-#include <security/pam_appl.h>
-int main(void) {
-	return 0;
-}'
-	[ -z "$WITHOUT_PAM" ] && check_func "pam_appl_h" "$src" && {
-		printf 'SRCS     +=	pam.c\n' >>$CONFIG_MK
-		printf 'LDLIBS +=	-lpam\n' >>$CONFIG_MK
-		printf '#define USE_PAM\n' >>$CONFIG_H
-		printf 'pam\n'
-		return 0
-	}
-
-	#
-	# Check for shadow.h.
-	#
-	src='
-#include <shadow.h>
-int main(void) {
-	return 0;
-}'
-	[ -z "$WITHOUT_SHADOW" ] && check_func "shadow_h" "$src" && {
-		printf 'SRCS     +=	shadow.c\n' >>$CONFIG_MK
-		printf 'LDLIBS +=	-lcrypt\n' >>$CONFIG_MK
-		printf '#define USE_SHADOW\n' >>$CONFIG_H
-		printf 'shadow\n'
-		return 0
-	}
-
-	return 1
-}
-
-persistmethod() {
-	[ -z "$WITHOUT_TIMESTAMP" ] && {
-		printf '#define USE_TIMESTAMP\n' >>$CONFIG_H
-		printf 'SRCS	+= timestamp.c\n' >>$CONFIG_MK
-		printf 'timestamp\n'
-		return 0
-	}
-	return 1
-}
-
 #
 # Check for explicit_bzero().
 #
@@ -303,20 +245,6 @@ int main(void) {
 }'
 check_func "setprogname" "$src" || {
 	printf 'SRCS +=	libopenbsd/progname.c\n' >>$CONFIG_MK
-}
-
-#
-# Check for readpassphrase().
-#
-src='
-#include <readpassphrase.h>
-int main(void) {
-	char buf[12];
-	readpassphrase("", buf, sizeof(buf), 0);
-	return 0;
-}'
-check_func "readpassphrase" "$src" || {
-	printf 'SRCS +=	libopenbsd/readpassphrase.c\n' >>$CONFIG_MK
 }
 
 #
@@ -531,18 +459,6 @@ __attribute__((__unused__)) static void foo(void){return;}
 check_func "__attribute__" "$src" || {
 	printf 'OS_CFLAGS	+=	-DNO_ATTRIBUTE_ON_RETURN_TYPE=1\n' >>$CONFIG_MK
 }
-
-auth=$(authmethod)
-if [ $? -eq 0 ]; then
-	printf 'Using auth method\t\t\t%s.\n' "$auth" >&2
-fi
-
-persist=$(persistmethod)
-if [ $? -eq 0 ]; then
-	printf 'Using persist method\t\t\t%s.\n' "$persist" >&2
-else
-	printf 'Using persist method\t\t\tnone.\n' >&2
-fi
 
 printf '#define DOAS_CONF "%s/doas.conf"\n' "${SYSCONFDIR}" >>$CONFIG_H
 
